@@ -22,6 +22,7 @@
         @csrf
         <button type="submit">Sync All</button>
     </form>
+    <a href="{{ route('books.all') }}" style="display:inline-block; margin-left:10px; padding:8px 12px; background:#28a745; color:white; text-decoration:none; border-radius:4px;">All Book Views</a>
 
     <br>
 
@@ -44,15 +45,13 @@
                 </form>
             </td>
             <td>
+                <a href="{{ route('books.index', $user->id) }}" style="padding:5px 10px; background:#17a2b8; color:white; text-decoration:none; border-radius:3px; display:inline-block; margin-right:5px;">View Books</a>
+
                 <form action="{{ route('users.destroy', $user->id) }}" method="POST" style="display:inline;">
                     @csrf
                     @method('DELETE')
                     <button type="submit">Delete</button>
                 </form>
-                <!-- <form action="{{ route('users.sync', $user->id) }}" method="POST" style="display:inline;">
-                    @csrf
-                    <button type="submit">Sync</button>
-                </form> -->
             </td>
         </tr>
         @endforeach

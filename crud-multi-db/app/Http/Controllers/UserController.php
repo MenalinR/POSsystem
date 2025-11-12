@@ -61,6 +61,20 @@ class UserController extends Controller
     // Sync ALL users to DB2 (updates added/modified records and removes deleted ones)
     public function syncAll()
     {
+                // ===== SYNC BOOKS =====
+        // Step 4: Get all books from DB1
+        $db1Books = \App\Models\Book::all();
+
+        // Step 5: Sync all DB1 books to DB2 (insert or update)
+        foreach ($db1Books as $book) {
+            DB::connection('mysql_second')->table('book')->updateOrInsert(
+                ['book_id' => $book->book_id],
+                [
+                    'user_id' => $book->user_id,
+                    'book_name' => $book->book_name,
+                ]
+            );
+            
         $db1Users = UserModel::all();
 
         // Step 1: Sync all DB1 users to DB2 (insert or update)
@@ -81,6 +95,19 @@ class UserController extends Controller
             DB::connection('mysql_second')->table('user')->whereIn('id', $idsToDelete)->delete();
         }
 
-        return back()->with('success', 'All users synced to DB2! (added, updated, and deleted records synchronized)');
+
+        }
+
+        // Step 6: Get all book IDs from DB1 and DB2
+        $db1BookIds = $db1Books->pluck('book_id')->toArray();
+        $db2AllBookIds = DB::connection('mysql_second')->table('book')->pluck('book_id')->toArray();
+
+        // Step 7: Delete books from DB2 that don't exist in DB1 (deleted records)
+        $bookIdsToDelete = array_diff($db2AllBookIds, $db1BookIds);
+        if (!empty($bookIdsToDelete)) {
+            DB::connection('mysql_second')->table('book')->whereIn('book_id', $bookIdsToDelete)->delete();
+        }
+
+        return back()->with('success', 'All users and books synced to DB2! (added, updated, and deleted records synchronized)');
     }
 }
