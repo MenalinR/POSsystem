@@ -58,19 +58,29 @@ class UserController extends Controller
         return back()->with('success', 'User synced to DB2!');
     }
 
-    // Sync ALL users to DB2
+    // Sync ALL users to DB2 (updates added/modified records and removes deleted ones)
     public function syncAll()
     {
-        $users = UserModel::all();
+        $db1Users = UserModel::all();
 
-        foreach ($users as $user) {
-            // Use id as the matching key so primary keys are preserved if desired
+        // Step 1: Sync all DB1 users to DB2 (insert or update)
+        foreach ($db1Users as $user) {
             DB::connection('mysql_second')->table('user')->updateOrInsert(
                 ['id' => $user->id],
                 ['email' => $user->email]
             );
         }
 
-        return back()->with('success', 'All users synced to DB2!');
+        // Step 2: Get all user IDs from DB1 and DB2
+        $db1Ids = $db1Users->pluck('id')->toArray();
+        $db2AllIds = DB::connection('mysql_second')->table('user')->pluck('id')->toArray();
+
+        // Step 3: Delete users from DB2 that don't exist in DB1 (deleted records)
+        $idsToDelete = array_diff($db2AllIds, $db1Ids);
+        if (!empty($idsToDelete)) {
+            DB::connection('mysql_second')->table('user')->whereIn('id', $idsToDelete)->delete();
+        }
+
+        return back()->with('success', 'All users synced to DB2! (added, updated, and deleted records synchronized)');
     }
 }
